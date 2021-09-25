@@ -19,12 +19,11 @@ public class Parser {
                     str.append(c);
                 }
                 case SKIP_SPACE -> {
-                    if (c == ' '){
+                    if (c == ' ' || c == '\n'){
                         state = States.START;
                         positions.add(str.toString());
                         if (!move.getMoving().isEmpty()) {
                             move.getMoving().add(str.toString());
-//                            System.out.println(move.getMoving());
                             moves.add(move);
                             move = new Move();
                         }

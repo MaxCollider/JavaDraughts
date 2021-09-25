@@ -5,6 +5,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class Main {
@@ -18,17 +19,47 @@ public class Main {
 
         try {
             InputData(WhitePos, BlackPos, moves);
-            System.out.println(WhitePos);
             int i = 0;
+            System.out.println(WhitePos);
+            System.out.println(BlackPos);
             for (Move move : moves) {
-                i++;
                 ParseMoves(WhitePos, BlackPos, move, i % 2);
+                i++;
             }
         } catch (GameException e) {
             e.printExceptionMessage();
             System.exit(0);
         } catch (IOException e) {
             e.printStackTrace();
+        }
+
+        List<String> RightAnswerWhite = new ArrayList<>();
+        List<String> RightAnswerBlack = new ArrayList<>();
+
+        Parser parser = new Parser();
+        Path path = Paths.get("/home/maxim/IdeaProjects/Shashki/src/main/resources/answer.txt");
+
+        try(BufferedReader br = Files.newBufferedReader(path, StandardCharsets.UTF_8)) {
+            RightAnswerWhite.addAll(parser.parse(br.readLine() + "\n", moves));
+            RightAnswerBlack.addAll(parser.parse(br.readLine() + "\n", moves));
+        } catch (IOException e){
+            e.printStackTrace();
+        }
+
+        Collections.sort(RightAnswerBlack);
+        Collections.sort(RightAnswerWhite);
+        Collections.sort(WhitePos);
+        Collections.sort(BlackPos);
+
+        if (WhitePos.equals(RightAnswerWhite) && BlackPos.equals(RightAnswerBlack)){
+            System.out.println("SOSATb");
+        } else {
+            System.out.println("-------------------------");
+            System.out.println(WhitePos);
+            System.out.println(RightAnswerWhite);
+            System.out.println("------------------------");
+            System.out.println(BlackPos);
+            System.out.println(RightAnswerBlack);
         }
 
     }
@@ -44,14 +75,13 @@ public class Main {
 
         try (BufferedReader bufferedReader = Files.newBufferedReader(path, StandardCharsets.UTF_8)){
             String CurrentLine;
-            WhitePos = parser.parse(bufferedReader.readLine(), moves);
-            BlackPos = parser.parse(bufferedReader.readLine(), moves);
-            System.out.println(WhitePos);
+            WhitePos.addAll(parser.parse(bufferedReader.readLine() + "\n", moves));
+            BlackPos.addAll(parser.parse(bufferedReader.readLine() + "\n", moves));
+
             while ((CurrentLine = bufferedReader.readLine()) != null) {
                 parser.parse(CurrentLine + " ", moves);
             }
         }
-        System.out.println(WhitePos);
     }
 
     private static void ParseMoves(List<String> WhitePos, List<String> BlackPos, Move move, int color) throws GameException{
@@ -67,8 +97,10 @@ public class Main {
 
             String temp = move.getMoving().get(i);
 
-            if (temp.toCharArray()[0] > 'h' || temp.toCharArray()[0] < 'a') {
-                System.out.println(temp.toCharArray()[0]);
+            if (temp.toCharArray()[0] > 'h' || temp.toCharArray()[0] < 'a'
+                    || Character.getNumericValue(temp.toCharArray()[1]) > 8
+                    || Character.getNumericValue(temp.toCharArray()[1]) < 1) {
+
                 throw new GameErrorException();
             }
             endPosition[0] = FromLettersToInteger(temp.toCharArray()[0]);
@@ -78,19 +110,52 @@ public class Main {
             CheckOccupy(WhitePos, BlackPos, temp);
 
             if (!move.isBeatFlag()) {
-                if (color == 1){
-                    if (!WhitePos.remove(startCell)) System.out.println("LOOL");
+                if (color == 0){
+                    if (!WhitePos.remove(startCell)){
+                        System.out.println("LOOL");
+                        System.out.println(move.getMoving());
+                        System.out.println(startCell);
+                    }
                     WhitePos.add(temp);
-                }else {
+                } else {
+                    if (!BlackPos.remove(startCell)){
+                        System.out.println("Lool2");
+                        System.out.println(move.getMoving());
+                        System.out.println(startCell);
+                    }
+                    BlackPos.add(temp);
+                }
+            } else {
+                if (Math.abs(endPosition[0] - startPosition[0]) != 2 || Math.abs(endPosition[1] - startPosition[1]) != 2) {
+                    throw new InvalidMoveException();
+                }
+                String beaten = FromCoordToMoveString((endPosition[0] + startPosition[0])/2, (endPosition[1] + startPosition[1])/2);
+                if (color == 0) {
+                    if (!BlackPos.remove(beaten)){
+                        System.out.println("suck");
+                        System.out.println(move.getMoving());
+                    }
+                    WhitePos.remove(startCell);
+                    WhitePos.add(temp);
+                } else {
+                    if (!WhitePos.remove(beaten)) System.out.println("suck2");
                     BlackPos.remove(startCell);
                     BlackPos.add(temp);
                 }
 
             }
-
             startPosition = endPosition;
             startCell = temp;
+
         }
+    }
+
+    private static String FromCoordToMoveString(int x0, int y0) {
+        StringBuilder stringBuilder = new StringBuilder();
+        stringBuilder.append(Character.toChars(x0 + DIFF_FOR_LETTERS));
+        stringBuilder.append(y0);
+        return stringBuilder.toString();
+
     }
 
     private static void CheckOccupy(List<String> WhitePosition, List<String> BlackPosition, String position) throws InvalidMoveException {
@@ -108,6 +173,7 @@ public class Main {
             throw new WhiteCellException();
         }
     }
+
 
 //    private static void
 
