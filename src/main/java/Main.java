@@ -101,7 +101,7 @@ public class Main {
                     || Character.getNumericValue(temp.toCharArray()[1]) > 8
                     || Character.getNumericValue(temp.toCharArray()[1]) < 1) {
 
-                throw new GameErrorException();
+                throw new OutOfBoardBoundsExeption();
             }
             endPosition[0] = FromLettersToInteger(temp.toCharArray()[0]);
             endPosition[1] = temp.toCharArray()[1] - '0';
@@ -110,18 +110,21 @@ public class Main {
             CheckOccupy(WhitePos, BlackPos, temp);
 
             if (!move.isBeatFlag()) {
+                if (checkIsPossibleToBeat(WhitePos, BlackPos, startPosition, color)){
+                    throw new InvalidMoveException();
+                }
                 if (color == 0){
                     if (!WhitePos.remove(startCell)){
-                        System.out.println("LOOL");
-                        System.out.println(move.getMoving());
+                        System.out.println(move.getMoving()); // damp
                         System.out.println(startCell);
+                        throw new CheckNotExistException();
                     }
                     WhitePos.add(temp);
                 } else {
                     if (!BlackPos.remove(startCell)){
-                        System.out.println("Lool2");
-                        System.out.println(move.getMoving());
+                        System.out.println(move.getMoving()); //damp
                         System.out.println(startCell);
+                        throw new CheckNotExistException();
                     }
                     BlackPos.add(temp);
                 }
@@ -132,13 +135,14 @@ public class Main {
                 String beaten = FromCoordToMoveString((endPosition[0] + startPosition[0])/2, (endPosition[1] + startPosition[1])/2);
                 if (color == 0) {
                     if (!BlackPos.remove(beaten)){
-                        System.out.println("suck");
-                        System.out.println(move.getMoving());
+                        throw new BeatenCheckException();
                     }
                     WhitePos.remove(startCell);
                     WhitePos.add(temp);
                 } else {
-                    if (!WhitePos.remove(beaten)) System.out.println("suck2");
+                    if (!WhitePos.remove(beaten)) {
+                        throw new BeatenCheckException();
+                    }
                     BlackPos.remove(startCell);
                     BlackPos.add(temp);
                 }
@@ -151,16 +155,12 @@ public class Main {
     }
 
     private static String FromCoordToMoveString(int x0, int y0) {
-        StringBuilder stringBuilder = new StringBuilder();
-        stringBuilder.append(Character.toChars(x0 + DIFF_FOR_LETTERS));
-        stringBuilder.append(y0);
-        return stringBuilder.toString();
-
+        return String.valueOf(Character.toChars(x0 + DIFF_FOR_LETTERS)) + y0;
     }
 
-    private static void CheckOccupy(List<String> WhitePosition, List<String> BlackPosition, String position) throws InvalidMoveException {
+    private static void CheckOccupy(List<String> WhitePosition, List<String> BlackPosition, String position) throws BusyCellException {
         if (WhitePosition.contains(position) || BlackPosition.contains(position)) {
-            throw new InvalidMoveException();
+            throw new BusyCellException();
         }
     }
 
@@ -174,8 +174,63 @@ public class Main {
         }
     }
 
+    private static boolean checkIsPossibleToBeat(List<String> WhitePos, List<String> BlackPos, int[] beginPosition, int color) throws InvalidMoveException {
+        String beaten;
+        if (beginPosition[0] + 2 <= 8) {
+            if (beginPosition[1] + 2 <= 8) {
+                beaten = FromCoordToMoveString(beginPosition[0] + 1, beginPosition[1] + 1);
+                if (color == 0) {
+                    if (BlackPos.contains(beaten)) {
+                        throw new InvalidMoveException();
+                    }
+                } else {
+                    if (WhitePos.contains(beaten)) {
+                        throw new InvalidMoveException();
+                    }
+                }
+            }
+            if (beginPosition[1] - 2 > 0) {
+                beaten = FromCoordToMoveString(beginPosition[0] + 1, beginPosition[1] - 1);
+                if (color == 0) {
+                    if (BlackPos.contains(beaten)) {
+                        throw new InvalidMoveException();
+                    }
+                } else {
+                    if (WhitePos.contains(beaten)) {
+                        throw new InvalidMoveException();
+                    }
+                }
+            }
+        }
 
-//    private static void
+        if (beginPosition[0] - 2 <= 8) {
+            if (beginPosition[1] + 2 <= 8) {
+                beaten = FromCoordToMoveString(beginPosition[0] - 1, beginPosition[1] + 1);
+                if (color == 0) {
+                    if (BlackPos.contains(beaten)) {
+                        throw new InvalidMoveException();
+                    }
+                } else {
+                    if (WhitePos.contains(beaten)) {
+                        throw new InvalidMoveException();
+                    }
+                }
+            }
+            if (beginPosition[1] - 2 > 0) {
+                beaten = FromCoordToMoveString(beginPosition[0] - 1, beginPosition[1] - 1);
+                if (color == 0) {
+                    if (BlackPos.contains(beaten)) {
+                        throw new InvalidMoveException();
+                    }
+                } else {
+                    if (WhitePos.contains(beaten)) {
+                        throw new InvalidMoveException();
+                    }
+                }
+            }
+        }
+        return true;
+    }
 
 
 }
